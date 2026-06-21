@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>資産管理アプリ 2026</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Helvetica Neue', Arial, sans-serif; background: #f0f2f5; color: #1a1a2e; font-size: 13px; }
+
+  header {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    color: white; padding: 20px 24px; display: flex; align-items: center; justify-content: space-between;
+  }
+  header h1 { font-size: 20px; font-weight: 700; letter-spacing: 0.5px; }
+  header span { font-size: 13px; opacity: 0.7; }
+
+  .tabs { display: flex; background: white; border-bottom: 1px solid #e0e0e0; padding: 0 24px; }
+  .tab { padding: 12px 20px; cursor: pointer; border-bottom: 3px solid transparent; font-weight: 600; color: #888; transition: all 0.2s; }
+  .tab.active { color: #0f3460; border-bottom-color: #0f3460; }
+  .tab:hover { color: #0f3460; }
+
+  .content { padding: 20px 24px; }
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* Summary Cards */
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .card {
+    background: white; border-radius: 12px; padding: 18px 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06); border-left: 4px solid #0f3460;
+  }
+  .card.green { border-left-color: #27ae60; }
+  .card.orange { border-left-color: #e67e22; }
+  .card.red { border-left-color: #e74c3c; }
+  .card-label { font-size: 11px; color: #888; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+  .card-value { font-size: 22px; font-weight: 700; color: #1a1a2e; }
+  .card-sub { font-size: 12px; margin-top: 4px; }
+  .pos { color: #27ae60; } .neg { color: #e74c3c; }
+
+  /* Table */
+  .table-wrap { overflow-x: auto; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  table { border-collapse: collapse; width: 100%; background: white; }
+  th { background: #1a1a2e; color: white; padding: 10px 12px; text-align: right; font-weight: 600; font-size: 12px; white-space: nowrap; }
+  th:first-child { text-align: left; min-width: 110px; }
+  td { padding: 8px 12px; text-align: right; border-bottom: 1px solid #f0f0f0; white-space: nowrap; }
+  td:first-child { text-align: left; font-weight: 600; color: #333; }
+  tr:hover td { background: #f8f9ff; }
+  tr.subtotal td { background: #f0f4ff; font-weight: 700; color: #0f3460; border-top: 2px solid #0f3460; }
+  tr.delta td { background: #fafafa; color: #555; font-size: 12px; }
+  tr.section-header td { background: #e8edf5; font-weight: 700; color: #0f3460; font-size: 12px; letter-spacing: 0.3px; }
+  tr.grand-total td { background: #1a1a2e; color: white; font-weight: 700; font-size: 14px; }
+  tr.grand-total td.pos { color: #4ade80; } tr.grand-total td.neg { color: #f87171; }
+  tr.ratio td { background: #fff8e8; color: #7a5c00; }
+  tr.retirement td { background: #f0fff4; color: #1a5c30; font-weight: 600; }
+  .input-cell input {
+    width: 100%; border: none; background: transparent; text-align: right;
+    font-size: 13px; font-family: inherit; color: #1a1a2e; padding: 2px 4px;
+    border-radius: 4px; transition: background 0.15s;
+  }
+  .input-cell input:focus { outline: none; background: #e8f0ff; }
+  .input-cell input[data-filled="true"] { color: #0f3460; font-weight: 600; }
+  td.pos-val { color: #27ae60; font-weight: 600; }
+  td.neg-val { color: #e74c3c; font-weight: 600; }
+  td.zero-val { color: #bbb; }
+
+  /* Charts */
+  .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .chart-card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .chart-card h3 { font-size: 14px; font-weight: 700; color: #1a1a2e; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid #eee; }
+  .chart-card.full { grid-column: 1 / -1; }
+  canvas { max-height: 280px; }
+
+  /* Save button */
+  .save-btn {
+    position: fixed; bottom: 24px; right: 24px;
+    background: linear-gradient(135deg, #0f3460, #1a73e8);
+    color: white; border: none; padding: 14px 28px; border-radius: 30px;
+    font-size: 14px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 20px rgba(15,52,96,0.4);
+    transition: transform 0.2s, box-shadow 0.2s; z-index: 100;
+  }
+  .save-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(15,52,96,0.5); }
+  .save-btn:active { transform: translateY(0); }
+  .saved-msg { position: fixed; bottom: 80px; right: 24px; background: #27ae60; color: white; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; opacity: 0; transition: opacity 0.3s; z-index: 100; }
+  .saved-msg.show { opacity: 1; }
+
+  @media (max-width: 768px) {
+    .charts-grid { grid-template-columns: 1fr; }
+    .chart-card.full { grid-column: 1; }
+    .cards { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>資産管理アプリ 2026</h1>
+  <span id="today-label">集計日: 2026/6/1</span>
+</header>
+
+<div class="tabs">
+  <div class="tab active" onclick="showTab('input')">入力・集計表</div>
+  <div class="tab" onclick="showTab('charts')">グラフ・推移</div>
+</div>
+
+<div class="content">
+  <!-- Summary Cards -->
+  <div class="cards" id="summary-cards"></div>
+
+  <!-- Input Section -->
+  <div class="section active" id="section-input">
+    <div class="table-wrap">
+      <table id="main-table">
+        <thead id="table-head"></thead>
+        <tbody id="table-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Charts Section -->
+  <div class="section" id="section-charts">
+    <div class="charts-grid">
+      <div class="chart-card full">
+        <h3>総資産推移</h3>
+        <canvas id="chart-total"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>現金・預金 内訳推移</h3>
+        <canvas id="chart-cash"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>投資資産 内訳推移</h3>
+        <canvas id="chart-invest"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>資産割合（最新月）</h3>
+        <canvas id="chart-pie"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>先月比推移</h3>
+        <canvas id="chart-mom"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<button class="save-btn" onclick="saveData()">💾 保存</button>
+<div class="saved-msg" id="saved-msg">保存しました</div>
+
+<script>
+// ========== DATA ==========
+const PERIODS = ['1月1日','1/末','2/末','3/末','4/末','5/末','6/末','7/末','8/末','9/末','10/末','11/末','12/末'];
+
+const CASH_ITEMS = ['三井住友','りそな・池田','現金','ICOCA','paypay','Starbucks','megu'];
+const INV_ITEMS = ['米国株式','SBI残高','長谷工持株'];
+
+// Initial data from PDF
+const INITIAL = {
+  '三井住友':   [1998252, 1880901, 2022270, 2008796, 1967952, 1879603, null,null,null,null,null,null,null],
+  'りそな・池田':[77774,  481756,  497585,  461205,  475745,  480725,  null,null,null,null,null,null,null],
+  '現金':       [24588,   51982,   47752,   14058,   51957,   38812,   null,null,null,null,null,null,null],
+  'ICOCA':      [2938,    3798,    2804,    1094,    3494,    3154,    null,null,null,null,null,null,null],
+  'paypay':     [1497,    7724,    1609,    4294,    4339,    1413,    null,null,null,null,null,null,null],
+  'Starbucks':  [1013,    38,      684,     415,     21,      835,     null,null,null,null,null,null,null],
+  'megu':       [93537,   92147,   90757,   89367,   87977,   86587,   null,null,null,null,null,null,null],
+  '米国株式':   [6873364, 6886707, 7010407, 6670400, 7534681, 7985843, null,null,null,null,null,null,null],
+  'SBI残高':    [505301,  455365,  405457,  355531,  305597,  255655,  null,null,null,null,null,null,null],
+  '長谷工持株': [2115758, 2166736, 2349347, 1985904, 1962748, 1901476, null,null,null,null,null,null,null],
+  '退職金見込': [705300,  705300,  705300,  705300,  705300,  705300,  705300,705300,705300,705300,null,null,null],
+};
+
+// Load saved data or use initial
+let data = {};
+function loadData() {
+  const saved = localStorage.getItem('assetData2026');
+  if (saved) {
+    data = JSON.parse(saved);
+    // merge initial for any missing keys
+    for (const k in INITIAL) {
+      if (!data[k]) data[k] = [...INITIAL[k]];
+      else {
+        for (let i = 0; i < 13; i++) {
+          if (data[k][i] === undefined) data[k][i] = INITIAL[k][i];
+        }
+      }
+    }
+  } else {
+    for (const k in INITIAL) data[k] = [...INITIAL[k]];
+  }
+}
+
+function saveData() {
+  localStorage.setItem('assetData2026', JSON.stringify(data));
+  const msg = document.getElementById('saved-msg');
+  msg.classList.add('show');
+  setTimeout(() => msg.classList.remove('show'), 2000);
+}
+
+// ========== CALC ==========
+function getVal(key, i) {
+  return (data[key] && data[key][i] != null) ? data[key][i] : null;
+}
+
+function cashTotal(i) {
+  let s = 0, hasAny = false;
+  for (const k of CASH_ITEMS) { const v = getVal(k, i); if (v != null) { s += v; hasAny = true; } }
+  return hasAny ? s : null;
+}
+function invTotal(i) {
+  let s = 0, hasAny = false;
+  for (const k of INV_ITEMS) { const v = getVal(k, i); if (v != null) { s += v; hasAny = true; } }
+  return hasAny ? s : null;
+}
+function grandTotal(i) {
+  const c = cashTotal(i), v = invTotal(i);
+  if (c == null && v == null) return null;
+  return (c || 0) + (v || 0);
+}
+function delta(arr, i, base) {
+  const cur = arr(i);
+  if (cur == null) return null;
+  const ref = arr(base);
+  if (ref == null) return null;
+  return cur - ref;
+}
+
+// ========== FORMAT ==========
+function fmt(v, currency=true) {
+  if (v == null) return '';
+  if (currency) return v.toLocaleString('ja-JP');
+  return v.toFixed(1) + '%';
+}
+function fmtDelta(v) {
+  if (v == null) return '';
+  if (v === 0) return '-';
+  return (v > 0 ? '+' : '') + v.toLocaleString('ja-JP');
+}
+function deltaClass(v) {
+  if (v == null || v === 0) return 'zero-val';
+  return v > 0 ? 'pos-val' : 'neg-val';
+}
+
+// ========== RENDER TABLE ==========
+function renderTable() {
+  const head = document.getElementById('table-head');
+  const body = document.getElementById('table-body');
+
+  // Header
+  head.innerHTML = `<tr>${['項目', ...PERIODS].map((p,i) =>
+    `<th>${p}</th>`).join('')}</tr>`;
+
+  let rows = '';
+
+  // Section: 現金・預金
+  rows += `<tr class="section-header"><td colspan="${14}">■ 現金・預金</td></tr>`;
+  for (const key of CASH_ITEMS) {
+    rows += `<tr><td>${key}</td>` + PERIODS.map((_, i) => {
+      const v = getVal(key, i);
+      const isPast = (i < 6);
+      if (isPast && v != null) {
+        return `<td>${fmt(v)}</td>`;
+      }
+      return `<td class="input-cell"><input type="text"
+        data-key="${key}" data-idx="${i}"
+        value="${v != null ? v.toLocaleString('ja-JP') : ''}"
+        data-filled="${v != null}"
+        onchange="onInput(this)" onfocus="this.select()"></td>`;
+    }).join('') + '</tr>';
+  }
+  // Cash totals
+  rows += `<tr class="subtotal"><td>合計</td>` + PERIODS.map((_,i) => {
+    const v = cashTotal(i);
+    return `<td>${v != null ? fmt(v) : ''}</td>`;
+  }).join('') + '</tr>';
+  rows += `<tr class="delta"><td>先月比</td>` + PERIODS.map((_,i) => {
+    if (i === 0) return `<td>-</td>`;
+    const v = delta(cashTotal, i, i-1);
+    return `<td class="${deltaClass(v)}">${fmtDelta(v)}</td>`;
+  }).join('') + '</tr>';
+  rows += `<tr class="delta"><td>初月比</td>` + PERIODS.map((_,i) => {
+    if (i === 0) return `<td>-</td>`;
+    const v = delta(cashTotal, i, 0);
+    return `<td class="${deltaClass(v)}">${fmtDelta(v)}</td>`;
+  }).join('') + '</tr>';
+
+  rows += `<tr><td colspan="14" style="height:8px;background:#f0f2f5;border:none;"></td></tr>`;
+
+  // Section: 投資
+  rows += `<tr class="section-header"><td colspan="${14}">■ 投資資産</td></tr>`;
+  for (const key of INV_ITEMS) {
+    rows += `<tr><td>${key}</td>` + PERIODS.map((_, i) => {
+      const v = getVal(key, i);
+      const isPast = (i < 6);
+      if (isPast && v != null) {
+        return `<td>${fmt(v)}</td>`;
+      }
+      return `<td class="input-cell"><input type="text"
+        data-key="${key}" data-idx="${i}"
+        value="${v != null ? v.toLocaleString('ja-JP') : ''}"
+        data-filled="${v != null}"
+        onchange="onInput(this)" onfocus="this.select()"></td>`;
+    }).join('') + '</tr>';
+  }
+  rows += `<tr class="subtotal"><td>合計</td>` + PERIODS.map((_,i) => {
+    const v = invTotal(i);
+    return `<td>${v != null ? fmt(v) : ''}</td>`;
+  }).join('') + '</tr>';
+  rows += `<tr class="delta"><td>先月比</td>` + PERIODS.map((_,i) => {
+    if (i === 0) return `<td>-</td>`;
+    const v = delta(invTotal, i, i-1);
+    return `<td class="${deltaClass(v)}">${fmtDelta(v)}</td>`;
+  }).join('') + '</tr>';
+  rows += `<tr class="delta"><td>初月比</td>` + PERIODS.map((_,i) => {
+    if (i === 0) return `<td>-</td>`;
+    const v = delta(invTotal, i, 0);
+    return `<td class="${deltaClass(v)}">${fmtDelta(v)}</td>`;
+  }).join('') + '</tr>';
+
+  rows += `<tr><td colspan="14" style="height:8px;background:#f0f2f5;border:none;"></td></tr>`;
+
+  // Grand Total
+  rows += `<tr class="grand-total"><td>総資産合計</td>` + PERIODS.map((_,i) => {
+    const v = grandTotal(i);
+    return `<td>${v != null ? fmt(v) : ''}</td>`;
+  }).join('') + '</tr>';
+  rows += `<tr class="grand-total delta"><td>先月比</td>` + PERIODS.map((_,i) => {
+    if (i === 0) return `<td>-</td>`;
+    const v = delta(grandTotal, i, i-1);
+    return `<td class="${deltaClass(v)}">${fmtDelta(v)}</td>`;
+  }).join('') + '</tr>';
+  rows += `<tr class="grand-total delta"><td>初月比</td>` + PERIODS.map((_,i) => {
+    if (i === 0) return `<td>-</td>`;
+    const v = delta(grandTotal, i, 0);
+    return `<td class="${deltaClass(v)}">${fmtDelta(v)}</td>`;
+  }).join('') + '</tr>';
+
+  rows += `<tr><td colspan="14" style="height:8px;background:#f0f2f5;border:none;"></td></tr>`;
+
+  // Ratios
+  rows += `<tr class="section-header"><td colspan="${14}">■ 資産割合</td></tr>`;
+  const ratioLabels = ['現金・預金','米国株式','長谷工持株','合計'];
+  for (const label of ratioLabels) {
+    rows += `<tr class="ratio"><td>${label}</td>` + PERIODS.map((_,i) => {
+      const gt = grandTotal(i);
+      if (gt == null || gt === 0) return `<td>-</td>`;
+      let v;
+      if (label === '現金・預金') v = cashTotal(i) / gt * 100;
+      else if (label === '合計') v = 100;
+      else {
+        const kmap = {'米国株式':'米国株式','長谷工持株':'長谷工持株'};
+        const raw = getVal(kmap[label], i);
+        v = raw != null ? raw / gt * 100 : null;
+      }
+      return `<td>${v != null ? v.toFixed(1)+'%' : '-'}</td>`;
+    }).join('') + '</tr>';
+  }
+
+  rows += `<tr><td colspan="14" style="height:8px;background:#f0f2f5;border:none;"></td></tr>`;
+
+  // 退職金
+  rows += `<tr class="retirement"><td>退職金見込</td>` + PERIODS.map((_,i) => {
+    const v = getVal('退職金見込', i);
+    if (i >= 10) {
+      return `<td class="input-cell"><input type="text"
+        data-key="退職金見込" data-idx="${i}"
+        value="${v != null ? v.toLocaleString('ja-JP') : ''}"
+        data-filled="${v != null}"
+        onchange="onInput(this)" onfocus="this.select()"></td>`;
+    }
+    return `<td>${v != null ? fmt(v) : ''}</td>`;
+  }).join('') + '</tr>';
+
+  body.innerHTML = rows;
+}
+
+function onInput(el) {
+  const key = el.dataset.key;
+  const idx = parseInt(el.dataset.idx);
+  const raw = el.value.replace(/,/g, '').trim();
+  const num = raw === '' ? null : parseFloat(raw);
+  data[key][idx] = num;
+  el.dataset.filled = num != null;
+  if (num != null) el.value = num.toLocaleString('ja-JP');
+  renderTable();
+  updateCards();
+  updateCharts();
+}
+
+// ========== SUMMARY CARDS ==========
+function updateCards() {
+  // Find latest month with data
+  let latestIdx = 0;
+  for (let i = 12; i >= 0; i--) {
+    if (grandTotal(i) != null) { latestIdx = i; break; }
+  }
+  const prevIdx = latestIdx > 0 ? latestIdx - 1 : null;
+  const gt = grandTotal(latestIdx);
+  const gtPrev = prevIdx != null ? grandTotal(prevIdx) : null;
+  const mom = gt != null && gtPrev != null ? gt - gtPrev : null;
+  const yoy = gt != null && grandTotal(0) != null ? gt - grandTotal(0) : null;
+  const retire = getVal('退職金見込', latestIdx);
+
+  const cards = document.getElementById('summary-cards');
+  cards.innerHTML = `
+    <div class="card">
+      <div class="card-label">総資産（${PERIODS[latestIdx]}）</div>
+      <div class="card-value">¥${gt != null ? gt.toLocaleString('ja-JP') : '-'}</div>
+      <div class="card-sub" style="color:#888">${retire != null ? '退職金含: ¥'+(gt+retire).toLocaleString('ja-JP') : ''}</div>
+    </div>
+    <div class="card ${mom != null && mom >= 0 ? 'green' : 'red'}">
+      <div class="card-label">先月比</div>
+      <div class="card-value ${mom != null && mom >= 0 ? 'pos' : 'neg'}">${mom != null ? (mom>=0?'+':'')+mom.toLocaleString('ja-JP') : '-'}</div>
+      <div class="card-sub" style="color:#888">${prevIdx != null ? PERIODS[prevIdx]+'→'+PERIODS[latestIdx] : ''}</div>
+    </div>
+    <div class="card ${yoy != null && yoy >= 0 ? 'green' : 'red'}">
+      <div class="card-label">初月比（vs 1月1日）</div>
+      <div class="card-value ${yoy != null && yoy >= 0 ? 'pos' : 'neg'}">${yoy != null ? (yoy>=0?'+':'')+yoy.toLocaleString('ja-JP') : '-'}</div>
+      <div class="card-sub" style="color:#888">1月1日 ¥${grandTotal(0) != null ? grandTotal(0).toLocaleString('ja-JP') : '-'}</div>
+    </div>
+    <div class="card orange">
+      <div class="card-label">現金・預金（${PERIODS[latestIdx]}）</div>
+      <div class="card-value">¥${cashTotal(latestIdx) != null ? cashTotal(latestIdx).toLocaleString('ja-JP') : '-'}</div>
+      <div class="card-sub" style="color:#888">${gt ? (cashTotal(latestIdx)/gt*100).toFixed(1)+'%' : ''}</div>
+    </div>
+    <div class="card">
+      <div class="card-label">投資資産（${PERIODS[latestIdx]}）</div>
+      <div class="card-value">¥${invTotal(latestIdx) != null ? invTotal(latestIdx).toLocaleString('ja-JP') : '-'}</div>
+      <div class="card-sub" style="color:#888">${gt ? (invTotal(latestIdx)/gt*100).toFixed(1)+'%' : ''}</div>
+    </div>
+  `;
+}
+
+// ========== CHARTS ==========
+let charts = {};
+
+function getLabels() {
+  return PERIODS.filter((_, i) => grandTotal(i) != null);
+}
+function getDataFor(fn) {
+  return PERIODS.map((_, i) => fn(i)).filter(v => v != null);
+}
+
+const COLORS = {
+  cash: '#2980b9', invest: '#8e44ad', total: '#0f3460',
+  smbc: '#e74c3c', risona: '#e67e22', genkin: '#f1c40f',
+  icoca: '#1abc9c', paypay: '#e84393', starbucks: '#27ae60', megu: '#9b59b6',
+  us: '#c0392b', sbi: '#2980b9', haseko: '#16a085',
+};
+
+function initCharts() {
+  // Total
+  charts.total = new Chart(document.getElementById('chart-total'), {
+    type: 'line',
+    data: { labels: [], datasets: [
+      { label: '総資産', data: [], borderColor: COLORS.total, backgroundColor: 'rgba(15,52,96,0.1)', fill: true, tension: 0.3, pointRadius: 5 },
+      { label: '現金・預金', data: [], borderColor: COLORS.cash, backgroundColor: 'transparent', tension: 0.3, borderDash: [5,3] },
+      { label: '投資資産', data: [], borderColor: '#8e44ad', backgroundColor: 'transparent', tension: 0.3, borderDash: [5,3] },
+    ]},
+    options: { responsive: true, plugins: { legend: { position: 'top' } }, scales: {
+      y: { ticks: { callback: v => '¥'+v.toLocaleString('ja-JP') } }
+    }}
+  });
+
+  // Cash breakdown
+  charts.cash = new Chart(document.getElementById('chart-cash'), {
+    type: 'bar',
+    data: { labels: [], datasets: CASH_ITEMS.map((k,i) => ({
+      label: k, data: [],
+      backgroundColor: Object.values(COLORS)[i],
+      stack: 'cash'
+    }))},
+    options: { responsive: true, plugins: { legend: { position: 'top' } }, scales: {
+      x: { stacked: true }, y: { stacked: true, ticks: { callback: v => '¥'+v.toLocaleString('ja-JP') } }
+    }}
+  });
+
+  // Invest breakdown
+  charts.invest = new Chart(document.getElementById('chart-invest'), {
+    type: 'bar',
+    data: { labels: [], datasets: INV_ITEMS.map((k,i) => ({
+      label: k, data: [],
+      backgroundColor: [COLORS.us, COLORS.sbi, COLORS.haseko][i],
+      stack: 'inv'
+    }))},
+    options: { responsive: true, plugins: { legend: { position: 'top' } }, scales: {
+      x: { stacked: true }, y: { stacked: true, ticks: { callback: v => '¥'+v.toLocaleString('ja-JP') } }
+    }}
+  });
+
+  // Pie
+  charts.pie = new Chart(document.getElementById('chart-pie'), {
+    type: 'doughnut',
+    data: { labels: [], datasets: [{ data: [], backgroundColor: [COLORS.cash, COLORS.us, COLORS.haseko, '#27ae60'] }] },
+    options: { responsive: true, plugins: { legend: { position: 'right' } } }
+  });
+
+  // MoM
+  charts.mom = new Chart(document.getElementById('chart-mom'), {
+    type: 'bar',
+    data: { labels: [], datasets: [{ label: '先月比', data: [], backgroundColor: [] }] },
+    options: { responsive: true, plugins: { legend: { display: false } }, scales: {
+      y: { ticks: { callback: v => (v>=0?'+':'')+v.toLocaleString('ja-JP') } }
+    }}
+  });
+}
+
+function updateCharts() {
+  const labels = PERIODS.filter((_, i) => grandTotal(i) != null);
+  const validIdx = PERIODS.map((_, i) => i).filter(i => grandTotal(i) != null);
+
+  // Total chart
+  charts.total.data.labels = labels;
+  charts.total.data.datasets[0].data = validIdx.map(i => grandTotal(i));
+  charts.total.data.datasets[1].data = validIdx.map(i => cashTotal(i));
+  charts.total.data.datasets[2].data = validIdx.map(i => invTotal(i));
+  charts.total.update();
+
+  // Cash chart
+  charts.cash.data.labels = labels;
+  CASH_ITEMS.forEach((k, di) => {
+    charts.cash.data.datasets[di].data = validIdx.map(i => getVal(k, i) || 0);
+  });
+  charts.cash.update();
+
+  // Invest chart
+  charts.invest.data.labels = labels;
+  INV_ITEMS.forEach((k, di) => {
+    charts.invest.data.datasets[di].data = validIdx.map(i => getVal(k, i) || 0);
+  });
+  charts.invest.update();
+
+  // Pie - use latest
+  const li = validIdx[validIdx.length - 1];
+  const gt = grandTotal(li);
+  if (gt) {
+    const ct = cashTotal(li) || 0;
+    const us = getVal('米国株式', li) || 0;
+    const hk = getVal('長谷工持株', li) || 0;
+    const other = gt - ct - us - hk;
+    charts.pie.data.labels = ['現金・預金', '米国株式', '長谷工持株', 'SBI残高'];
+    charts.pie.data.datasets[0].data = [ct, us, hk, getVal('SBI残高', li)||0];
+    charts.pie.update();
+  }
+
+  // MoM
+  const momLabels = labels.slice(1);
+  const momData = validIdx.slice(1).map(i => {
+    const v = delta(grandTotal, i, i-1);
+    return v;
+  });
+  charts.mom.data.labels = momLabels;
+  charts.mom.data.datasets[0].data = momData;
+  charts.mom.data.datasets[0].backgroundColor = momData.map(v => v >= 0 ? 'rgba(39,174,96,0.7)' : 'rgba(231,76,60,0.7)');
+  charts.mom.update();
+}
+
+// ========== TABS ==========
+function showTab(name) {
+  document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', ['input','charts'][i] === name));
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById('section-' + name).classList.add('active');
+  if (name === 'charts') updateCharts();
+}
+
+// ========== INIT ==========
+loadData();
+renderTable();
+updateCards();
+initCharts();
+updateCharts();
+
+// Update today's date
+const today = new Date();
+document.getElementById('today-label').textContent = `集計日: ${today.getFullYear()}/${today.getMonth()+1}/${today.getDate()}`;
+</script>
+</body>
+</html>
