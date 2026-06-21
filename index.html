@@ -7,7 +7,65 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Helvetica Neue', Arial, sans-serif; background: #f0f2f5; color: #1a1a2e; font-size: 13px; }
+
+  :root {
+    --bg: #f0f2f5; --text: #1a1a2e; --card-bg: #ffffff; --border: #f0f0f0;
+    --th-bg: #1a1a2e; --th-text: #ffffff; --td-text: #333; --first-bg: #ffffff;
+    --hover: #f8f9ff; --subtotal-bg: #f0f4ff; --subtotal-text: #0f3460;
+    --delta-bg: #fafafa; --section-bg: #e8edf5; --section-text: #0f3460;
+    --grand-bg: #1a1a2e; --grand-bg2: #2a2a4e; --grand-text: #ffffff;
+    --ratio-bg: #fff8e8; --ratio-text: #7a5c00; --retire-bg: #f0fff4; --retire-text: #1a5c30;
+    --spacer-bg: #f0f2f5; --hint-bg: #eef4ff; --hint-text: #355;
+    --input-bg: #fbfcff; --input-bg-filled: #ffffff; --input-border-hover: #d0d8e8;
+    --tab-bg: #ffffff; --muted: #888; --card-value: #1a1a2e;
+  }
+  [data-theme="dark"] {
+    --bg: #0e1117; --text: #e6edf3; --card-bg: #161b22; --border: #21262d;
+    --th-bg: #010409; --th-text: #e6edf3; --td-text: #c9d1d9; --first-bg: #161b22;
+    --hover: #1c2230; --subtotal-bg: #1a2336; --subtotal-text: #79c0ff;
+    --delta-bg: #11151c; --section-bg: #1a2030; --section-text: #79c0ff;
+    --grand-bg: #010409; --grand-bg2: #161b22; --grand-text: #ffffff;
+    --ratio-bg: #2a240f; --ratio-text: #e3c160; --retire-bg: #0f2417; --retire-text: #7ee2a8;
+    --spacer-bg: #0e1117; --hint-bg: #14233a; --hint-text: #9cc4f0;
+    --input-bg: #0d1117; --input-bg-filled: #1c2230; --input-border-hover: #30404f;
+    --tab-bg: #161b22; --muted: #8b949e; --card-value: #e6edf3;
+  }
+
+  body { font-family: 'Helvetica Neue', Arial, sans-serif; background: var(--bg); color: var(--text); font-size: 13px; transition: background 0.25s, color 0.25s; }
+
+  .theme-btn {
+    background: rgba(255,255,255,0.15); color: #fff; border: 1px solid rgba(255,255,255,0.25);
+    padding: 7px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer;
+    transition: background 0.2s; white-space: nowrap;
+  }
+  .theme-btn:hover { background: rgba(255,255,255,0.28); }
+
+  /* Item management */
+  .name-input {
+    border: 1px solid transparent; background: transparent; font-family: inherit;
+    font-size: 13px; font-weight: 600; color: var(--td-text); padding: 3px 6px;
+    border-radius: 5px; width: 130px; transition: all 0.15s;
+  }
+  .name-input:hover { border-color: var(--input-border-hover); background: var(--input-bg); }
+  .name-input:focus { outline: none; border-color: #1a73e8; background: var(--input-bg-filled); }
+  .op-cell { text-align: center !important; white-space: nowrap; }
+  .op-btn {
+    border: none; background: var(--subtotal-bg); color: var(--subtotal-text);
+    width: 24px; height: 24px; border-radius: 5px; cursor: pointer; font-size: 13px;
+    margin: 0 1px; transition: all 0.15s;
+  }
+  .op-btn:hover:not(:disabled) { background: #0f3460; color: #fff; }
+  .op-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  .op-btn.del { background: #fde8e8; color: #e74c3c; }
+  .op-btn.del:hover { background: #e74c3c; color: #fff; }
+  [data-theme="dark"] .op-btn.del { background: #3a1a1a; color: #ff8a8a; }
+  .add-row td { background: var(--card-bg); border-bottom: 1px solid var(--border); }
+  .add-btn {
+    border: 1px dashed #1a73e8; background: transparent; color: #1a73e8;
+    padding: 6px 16px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;
+    transition: all 0.15s;
+  }
+  .add-btn:hover { background: #1a73e8; color: #fff; }
 
   header {
     background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
@@ -16,61 +74,72 @@
   header h1 { font-size: 20px; font-weight: 700; letter-spacing: 0.5px; }
   header span { font-size: 13px; opacity: 0.7; }
 
-  .tabs { display: flex; background: white; border-bottom: 1px solid #e0e0e0; padding: 0 24px; }
-  .tab { padding: 12px 20px; cursor: pointer; border-bottom: 3px solid transparent; font-weight: 600; color: #888; transition: all 0.2s; }
-  .tab.active { color: #0f3460; border-bottom-color: #0f3460; }
-  .tab:hover { color: #0f3460; }
+  .tabs { display: flex; background: var(--tab-bg); border-bottom: 1px solid var(--border); padding: 0 24px; }
+  .tab { padding: 12px 22px; cursor: pointer; border-bottom: 3px solid transparent; font-weight: 600; color: var(--muted); transition: all 0.2s; }
+  .tab.active { color: var(--section-text); border-bottom-color: var(--section-text); }
+  .tab:hover { color: var(--section-text); }
+  .tab-sep { width: 1px; background: var(--border); margin: 8px 12px; }
 
   .content { padding: 20px 24px; }
   .section { display: none; }
   .section.active { display: block; }
 
   /* Summary Cards */
-  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 16px; margin-bottom: 24px; }
   .card {
-    background: white; border-radius: 12px; padding: 18px 20px;
+    background: var(--card-bg); border-radius: 12px; padding: 18px 20px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.06); border-left: 4px solid #0f3460;
   }
   .card.green { border-left-color: #27ae60; }
   .card.orange { border-left-color: #e67e22; }
+  .card.purple { border-left-color: #8e44ad; }
   .card.red { border-left-color: #e74c3c; }
-  .card-label { font-size: 11px; color: #888; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
-  .card-value { font-size: 22px; font-weight: 700; color: #1a1a2e; }
+  .card-label { font-size: 11px; color: var(--muted); font-weight: 600; letter-spacing: 0.5px; margin-bottom: 6px; }
+  .card-value { font-size: 22px; font-weight: 700; color: var(--card-value); }
   .card-sub { font-size: 12px; margin-top: 4px; }
   .pos { color: #27ae60; } .neg { color: #e74c3c; }
 
   /* Table */
   .table-wrap { overflow-x: auto; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
-  table { border-collapse: collapse; width: 100%; background: white; }
-  th { background: #1a1a2e; color: white; padding: 10px 12px; text-align: right; font-weight: 600; font-size: 12px; white-space: nowrap; }
-  th:first-child { text-align: left; min-width: 110px; }
-  td { padding: 8px 12px; text-align: right; border-bottom: 1px solid #f0f0f0; white-space: nowrap; }
-  td:first-child { text-align: left; font-weight: 600; color: #333; }
-  tr:hover td { background: #f8f9ff; }
-  tr.subtotal td { background: #f0f4ff; font-weight: 700; color: #0f3460; border-top: 2px solid #0f3460; }
-  tr.delta td { background: #fafafa; color: #555; font-size: 12px; }
-  tr.section-header td { background: #e8edf5; font-weight: 700; color: #0f3460; font-size: 12px; letter-spacing: 0.3px; }
-  tr.grand-total td { background: #1a1a2e; color: white; font-weight: 700; font-size: 14px; }
-  tr.grand-total td.pos { color: #4ade80; } tr.grand-total td.neg { color: #f87171; }
-  tr.ratio td { background: #fff8e8; color: #7a5c00; }
-  tr.retirement td { background: #f0fff4; color: #1a5c30; font-weight: 600; }
+  table { border-collapse: collapse; width: 100%; background: var(--card-bg); }
+  th { background: var(--th-bg); color: var(--th-text); padding: 10px 12px; text-align: right; font-weight: 600; font-size: 12px; white-space: nowrap; position: sticky; top: 0; }
+  th:first-child { text-align: left; min-width: 130px; position: sticky; left: 0; z-index: 2; }
+  td { padding: 7px 12px; text-align: right; border-bottom: 1px solid var(--border); white-space: nowrap; color: var(--text); }
+  td:first-child { text-align: left; font-weight: 600; color: var(--td-text); background: var(--first-bg); position: sticky; left: 0; z-index: 1; }
+  tr:hover td { background: var(--hover); }
+  tr:hover td:first-child { background: var(--hover); }
+  tr.subtotal td, tr.subtotal td:first-child { background: var(--subtotal-bg); font-weight: 700; color: var(--subtotal-text); border-top: 2px solid #0f3460; }
+  tr.delta td { background: var(--delta-bg); color: var(--muted); font-size: 12px; }
+  tr.delta td:first-child { background: var(--delta-bg); padding-left: 24px; font-weight: 500; color: var(--muted); }
+  tr.section-header td, tr.section-header td:first-child { background: var(--section-bg); font-weight: 700; color: var(--section-text); font-size: 12px; letter-spacing: 0.3px; }
+  tr.grand-total td, tr.grand-total td:first-child { background: var(--grand-bg); color: var(--grand-text); font-weight: 700; font-size: 14px; }
+  tr.grand-total.delta td, tr.grand-total.delta td:first-child { background: var(--grand-bg2); font-size: 12px; font-weight: 600; }
+  tr.grand-total td.pos-val { color: #4ade80; } tr.grand-total td.neg-val { color: #f87171; }
+  tr.ratio td, tr.ratio td:first-child { background: var(--ratio-bg); color: var(--ratio-text); }
+  tr.retirement td, tr.retirement td:first-child { background: var(--retire-bg); color: var(--retire-text); font-weight: 600; }
+  .item-num { display: inline-block; width: 20px; height: 20px; line-height: 20px; text-align: center; background: #0f3460; color: white; border-radius: 50%; font-size: 11px; margin-right: 8px; }
+  .stock .item-num { background: #8e44ad; }
   .input-cell input {
-    width: 100%; border: none; background: transparent; text-align: right;
-    font-size: 13px; font-family: inherit; color: #1a1a2e; padding: 2px 4px;
-    border-radius: 4px; transition: background 0.15s;
+    width: 100%; min-width: 80px; border: 1px solid transparent; background: var(--input-bg); text-align: right;
+    font-size: 13px; font-family: inherit; color: var(--text); padding: 4px 6px;
+    border-radius: 5px; transition: all 0.15s;
   }
-  .input-cell input:focus { outline: none; background: #e8f0ff; }
-  .input-cell input[data-filled="true"] { color: #0f3460; font-weight: 600; }
+  .input-cell input:hover { border-color: var(--input-border-hover); }
+  .input-cell input:focus { outline: none; background: var(--input-bg-filled); border-color: #1a73e8; }
+  .input-cell input[data-filled="true"] { color: var(--subtotal-text); font-weight: 600; background: var(--input-bg-filled); }
   td.pos-val { color: #27ae60; font-weight: 600; }
   td.neg-val { color: #e74c3c; font-weight: 600; }
-  td.zero-val { color: #bbb; }
+  td.zero-val { color: var(--muted); }
+  .spacer td { height: 8px; background: var(--spacer-bg) !important; border: none; }
+
+  .hint { background: var(--hint-bg); border-left: 4px solid #1a73e8; padding: 10px 16px; border-radius: 8px; margin-bottom: 16px; font-size: 12px; color: var(--hint-text); }
 
   /* Charts */
   .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-  .chart-card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
-  .chart-card h3 { font-size: 14px; font-weight: 700; color: #1a1a2e; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid #eee; }
+  .chart-card { background: var(--card-bg); border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .chart-card h3 { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
   .chart-card.full { grid-column: 1 / -1; }
-  canvas { max-height: 280px; }
+  canvas { max-height: 300px; }
 
   /* Save button */
   .save-btn {
@@ -81,7 +150,6 @@
     transition: transform 0.2s, box-shadow 0.2s; z-index: 100;
   }
   .save-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(15,52,96,0.5); }
-  .save-btn:active { transform: translateY(0); }
   .saved-msg { position: fixed; bottom: 80px; right: 24px; background: #27ae60; color: white; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; opacity: 0; transition: opacity 0.3s; z-index: 100; }
   .saved-msg.show { opacity: 1; }
 
@@ -96,29 +164,83 @@
 
 <header>
   <h1>資産管理アプリ 2026</h1>
-  <span id="today-label">集計日: 2026/6/1</span>
+  <div style="display:flex;align-items:center;gap:16px">
+    <span id="today-label"></span>
+    <button id="theme-btn" class="theme-btn" onclick="toggleTheme()">🌙 ダーク</button>
+  </div>
 </header>
 
 <div class="tabs">
-  <div class="tab active" onclick="showTab('input')">入力・集計表</div>
-  <div class="tab" onclick="showTab('charts')">グラフ・推移</div>
+  <div class="tab active" data-tab="input" onclick="showTab('input')">月次入力</div>
+  <div class="tab" data-tab="summary" onclick="showTab('summary')">月次集計表</div>
+  <div class="tab" data-tab="charts" onclick="showTab('charts')">月次グラフ</div>
+  <div class="tab-sep"></div>
+  <div class="tab" data-tab="yinput" onclick="showTab('yinput')">年次総資産入力</div>
+  <div class="tab" data-tab="ysummary" onclick="showTab('ysummary')">年次集計表</div>
+  <div class="tab" data-tab="ycharts" onclick="showTab('ycharts')">年次グラフ</div>
 </div>
 
 <div class="content">
-  <!-- Summary Cards -->
-  <div class="cards" id="summary-cards"></div>
-
-  <!-- Input Section -->
+  <!-- ===== 入力画面 ===== -->
   <div class="section active" id="section-input">
+    <div class="hint">各項目の月末残高を入力してください。1月1日〜5/末は元データ（初期値）として入力済みです。値はブラウザに自動保存されます（右下の保存ボタン）。</div>
     <div class="table-wrap">
-      <table id="main-table">
-        <thead id="table-head"></thead>
-        <tbody id="table-body"></tbody>
+      <table>
+        <thead id="input-head"></thead>
+        <tbody id="input-body"></tbody>
       </table>
     </div>
   </div>
 
-  <!-- Charts Section -->
+  <!-- ===== 集計表 ===== -->
+  <div class="section" id="section-summary">
+    <div class="cards" id="summary-cards"></div>
+    <div class="table-wrap">
+      <table>
+        <thead id="summary-head"></thead>
+        <tbody id="summary-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ===== 年次総資産入力 ===== -->
+  <div class="section" id="section-yinput">
+    <div class="hint">毎年1月1日時点の総資産を入力してください。前年比は自動計算されます。2012〜2026年は過去データとして入力済みです。行の追加・削除も可能です。</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>年</th><th>年齢</th><th>総資産（1月1日時点）</th><th>前年比</th><th style="text-align:center">操作</th></tr></thead>
+        <tbody id="yinput-body"></tbody>
+      </table>
+    </div>
+    <button class="add-btn" style="margin-top:14px" onclick="addYear()">＋ 年を追加</button>
+  </div>
+
+  <!-- ===== 年次集計表 ===== -->
+  <div class="section" id="section-ysummary">
+    <div class="cards" id="ysummary-cards"></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>年</th><th>年齢</th><th>総資産</th><th>前年比</th><th>初年比</th><th>増減率</th></tr></thead>
+        <tbody id="ysummary-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ===== 年次グラフ ===== -->
+  <div class="section" id="section-ycharts">
+    <div class="charts-grid">
+      <div class="chart-card full">
+        <h3>総資産 年次推移</h3>
+        <canvas id="ychart-total"></canvas>
+      </div>
+      <div class="chart-card full">
+        <h3>前年比（年間増減額）</h3>
+        <canvas id="ychart-yoy"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== グラフ・推移 ===== -->
   <div class="section" id="section-charts">
     <div class="charts-grid">
       <div class="chart-card full">
@@ -126,19 +248,19 @@
         <canvas id="chart-total"></canvas>
       </div>
       <div class="chart-card">
-        <h3>現金・預金 内訳推移</h3>
+        <h3>キャッシュ 内訳推移</h3>
         <canvas id="chart-cash"></canvas>
       </div>
       <div class="chart-card">
-        <h3>投資資産 内訳推移</h3>
-        <canvas id="chart-invest"></canvas>
+        <h3>株式 内訳推移</h3>
+        <canvas id="chart-stock"></canvas>
       </div>
       <div class="chart-card">
         <h3>資産割合（最新月）</h3>
         <canvas id="chart-pie"></canvas>
       </div>
       <div class="chart-card">
-        <h3>先月比推移</h3>
+        <h3>総資産 先月比推移</h3>
         <canvas id="chart-mom"></canvas>
       </div>
     </div>
@@ -149,269 +271,314 @@
 <div class="saved-msg" id="saved-msg">保存しました</div>
 
 <script>
-// ========== DATA ==========
+// ========== STRUCTURE ==========
 const PERIODS = ['1月1日','1/末','2/末','3/末','4/末','5/末','6/末','7/末','8/末','9/末','10/末','11/末','12/末'];
 
-const CASH_ITEMS = ['三井住友','りそな・池田','現金','ICOCA','paypay','Starbucks','megu'];
-const INV_ITEMS = ['米国株式','SBI残高','長谷工持株'];
+// 項目リスト（編集・追加・削除可能。localStorageに保存）
+// ※SBI証券残高は株ではないためキャッシュに含める
+const DEFAULT_CASH  = ['三井住友銀行','りそな銀行','池田泉州銀行','SBI証券残高','現金','ICOCA','paypay','Starbucks','megu'];
+const DEFAULT_STOCK = ['インデックス投資','長谷工持株会'];
+let CASH_ITEMS  = [...DEFAULT_CASH];
+let STOCK_ITEMS = [...DEFAULT_STOCK];
 
-// Initial data from PDF
-const INITIAL = {
-  '三井住友':   [1998252, 1880901, 2022270, 2008796, 1967952, 1879603, null,null,null,null,null,null,null],
-  'りそな・池田':[77774,  481756,  497585,  461205,  475745,  480725,  null,null,null,null,null,null,null],
-  '現金':       [24588,   51982,   47752,   14058,   51957,   38812,   null,null,null,null,null,null,null],
-  'ICOCA':      [2938,    3798,    2804,    1094,    3494,    3154,    null,null,null,null,null,null,null],
-  'paypay':     [1497,    7724,    1609,    4294,    4339,    1413,    null,null,null,null,null,null,null],
-  'Starbucks':  [1013,    38,      684,     415,     21,      835,     null,null,null,null,null,null,null],
-  'megu':       [93537,   92147,   90757,   89367,   87977,   86587,   null,null,null,null,null,null,null],
-  '米国株式':   [6873364, 6886707, 7010407, 6670400, 7534681, 7985843, null,null,null,null,null,null,null],
-  'SBI残高':    [505301,  455365,  405457,  355531,  305597,  255655,  null,null,null,null,null,null,null],
-  '長谷工持株': [2115758, 2166736, 2349347, 1985904, 1962748, 1901476, null,null,null,null,null,null,null],
-  '退職金見込': [705300,  705300,  705300,  705300,  705300,  705300,  705300,705300,705300,705300,null,null,null],
-};
-
-// Load saved data or use initial
-let data = {};
-function loadData() {
-  const saved = localStorage.getItem('assetData2026');
+function loadItems() {
+  const saved = localStorage.getItem('assetItems2026v2');
   if (saved) {
-    data = JSON.parse(saved);
-    // merge initial for any missing keys
-    for (const k in INITIAL) {
-      if (!data[k]) data[k] = [...INITIAL[k]];
-      else {
-        for (let i = 0; i < 13; i++) {
-          if (data[k][i] === undefined) data[k][i] = INITIAL[k][i];
-        }
-      }
-    }
-  } else {
-    for (const k in INITIAL) data[k] = [...INITIAL[k]];
+    const s = JSON.parse(saved);
+    if (Array.isArray(s.cash))  CASH_ITEMS  = s.cash;
+    if (Array.isArray(s.stock)) STOCK_ITEMS = s.stock;
   }
 }
+function saveItems() {
+  localStorage.setItem('assetItems2026v2', JSON.stringify({ cash: CASH_ITEMS, stock: STOCK_ITEMS }));
+}
 
+// ========== SEED DATA (元データ：読み込んだExcelより) ==========
+// マッピング: 三井住友→三井住友銀行 / りそな・池田→りそな銀行(合算) / 米国株式→インデックス投資 / SBI残高→SBI証券残高 / 長谷工持株→長谷工持株会
+const SEED = {
+  '三井住友銀行':  [1998252, 1880901, 2022270, 2008796, 1967952, 1879603, null,null,null,null,null,null,null],
+  'りそな銀行':    [77774,   481756,  497585,  161205,  181954,  194564,  null,null,null,null,null,null,null],
+  '池田泉州銀行':  [null,    null,    null,    300000,  293791,  286161,  null,null,null,null,null,null,null],
+  '現金':          [24588,   51982,   47752,   14058,   51957,   38812,   null,null,null,null,null,null,null],
+  'ICOCA':         [2938,    3798,    2804,    1094,    3494,    3154,    null,null,null,null,null,null,null],
+  'paypay':        [1497,    7724,    1609,    4294,    4339,    1413,    null,null,null,null,null,null,null],
+  'Starbucks':     [1013,    38,      684,     415,     21,      835,     null,null,null,null,null,null,null],
+  'megu':          [93537,   92147,   90757,   89367,   87977,   86587,   null,null,null,null,null,null,null],
+  'インデックス投資':[6873364,6886707, 7010407, 6670400, 7534681, 7985843, null,null,null,null,null,null,null],
+  'SBI証券残高':   [505301,  455365,  405457,  355531,  305597,  255655,  null,null,null,null,null,null,null],
+  '長谷工持株会':  [2115758, 2166736, 2349347, 1985904, 1962748, 1901476, null,null,null,null,null,null,null],
+  '退職金見込':    [705300,  705300,  705300,  705300,  705300,  705300,  705300,705300,705300,705300,705300,705300,705300],
+};
+
+const allKeys = () => [...CASH_ITEMS, ...STOCK_ITEMS, '退職金見込'];
+
+// ========== 年次データ（1月1日時点の総資産） ==========
+const YEAR_SEED = [
+  { year: 2012, age: 24, total: 2203458 },
+  { year: 2013, age: 25, total: 2077385 },
+  { year: 2014, age: 26, total: 1733089 },
+  { year: 2015, age: 27, total: 1352703 },
+  { year: 2016, age: 28, total: 1614336 },
+  { year: 2017, age: 29, total: 1526455 },
+  { year: 2018, age: 30, total: 2283392 },
+  { year: 2019, age: 31, total: 3049501 },
+  { year: 2020, age: 32, total: 4165711 },
+  { year: 2021, age: 33, total: 5260112 },
+  { year: 2022, age: 34, total: 5979100 },
+  { year: 2023, age: 35, total: 5948481 },
+  { year: 2024, age: 36, total: 7093567 },
+  { year: 2025, age: 37, total: 9685530 },
+  { year: 2026, age: 38, total: 11694022 },
+];
+let years = [];
+function loadYears() {
+  const saved = localStorage.getItem('assetYears2026');
+  years = saved ? JSON.parse(saved) : YEAR_SEED.map(y => ({...y}));
+  years.sort((a, b) => a.year - b.year);
+}
+function saveYears() { localStorage.setItem('assetYears2026', JSON.stringify(years)); }
+
+// ========== STATE ==========
+let data = {};
+function ensureRow(k) { if (!data[k]) data[k] = SEED[k] ? [...SEED[k]] : Array(13).fill(null); }
+function loadData() {
+  const saved = localStorage.getItem('assetData2026v2');
+  data = {};
+  for (const k of allKeys()) ensureRow(k);
+  if (saved) {
+    const s = JSON.parse(saved);
+    for (const k in s) {
+      ensureRow(k);
+      for (let i = 0; i < 13; i++) if (s[k][i] !== undefined) data[k][i] = s[k][i];
+    }
+  }
+}
 function saveData() {
-  localStorage.setItem('assetData2026', JSON.stringify(data));
+  localStorage.setItem('assetData2026v2', JSON.stringify(data));
   const msg = document.getElementById('saved-msg');
   msg.classList.add('show');
-  setTimeout(() => msg.classList.remove('show'), 2000);
+  setTimeout(() => msg.classList.remove('show'), 1800);
 }
 
 // ========== CALC ==========
-function getVal(key, i) {
-  return (data[key] && data[key][i] != null) ? data[key][i] : null;
+function getVal(key, i) { return (data[key] && data[key][i] != null) ? data[key][i] : null; }
+function sumItems(items, i) {
+  let s = 0, any = false;
+  for (const k of items) { const v = getVal(k, i); if (v != null) { s += v; any = true; } }
+  return any ? s : null;
 }
-
-function cashTotal(i) {
-  let s = 0, hasAny = false;
-  for (const k of CASH_ITEMS) { const v = getVal(k, i); if (v != null) { s += v; hasAny = true; } }
-  return hasAny ? s : null;
-}
-function invTotal(i) {
-  let s = 0, hasAny = false;
-  for (const k of INV_ITEMS) { const v = getVal(k, i); if (v != null) { s += v; hasAny = true; } }
-  return hasAny ? s : null;
-}
+const cashTotal  = i => sumItems(CASH_ITEMS, i);
+const stockTotal = i => sumItems(STOCK_ITEMS, i);
 function grandTotal(i) {
-  const c = cashTotal(i), v = invTotal(i);
+  const c = cashTotal(i), v = stockTotal(i);
   if (c == null && v == null) return null;
   return (c || 0) + (v || 0);
 }
-function delta(arr, i, base) {
-  const cur = arr(i);
-  if (cur == null) return null;
-  const ref = arr(base);
-  if (ref == null) return null;
+function delta(fn, i, base) {
+  const cur = fn(i); if (cur == null) return null;
+  const ref = fn(base); if (ref == null) return null;
   return cur - ref;
 }
 
 // ========== FORMAT ==========
-function fmt(v, currency=true) {
-  if (v == null) return '';
-  if (currency) return v.toLocaleString('ja-JP');
-  return v.toFixed(1) + '%';
-}
-function fmtDelta(v) {
-  if (v == null) return '';
-  if (v === 0) return '-';
-  return (v > 0 ? '+' : '') + v.toLocaleString('ja-JP');
-}
-function deltaClass(v) {
-  if (v == null || v === 0) return 'zero-val';
-  return v > 0 ? 'pos-val' : 'neg-val';
-}
+const fmt = v => v == null ? '' : v.toLocaleString('ja-JP');
+function fmtDelta(v) { if (v == null) return ''; if (v === 0) return '-'; return (v > 0 ? '+' : '') + v.toLocaleString('ja-JP'); }
+function deltaClass(v) { if (v == null || v === 0) return 'zero-val'; return v > 0 ? 'pos-val' : 'neg-val'; }
 
-// ========== RENDER TABLE ==========
-function renderTable() {
-  const head = document.getElementById('table-head');
-  const body = document.getElementById('table-body');
+// ========== INPUT SCREEN ==========
+const COLSPAN = () => PERIODS.length + 2; // 項目名 + 月数 + 操作列
 
-  // Header
-  head.innerHTML = `<tr>${['項目', ...PERIODS].map((p,i) =>
-    `<th>${p}</th>`).join('')}</tr>`;
+function renderInput() {
+  document.getElementById('input-head').innerHTML =
+    `<tr><th>項目</th>${PERIODS.map(p => `<th>${p}</th>`).join('')}<th style="text-align:center">操作</th></tr>`;
+
+  // 編集可能な項目行（項目名はクリックで編集、操作列に並べ替え・削除）
+  const itemRow = (key, group, idx, count, cls='') => {
+    const valCells = PERIODS.map((_, i) => {
+      const v = getVal(key, i);
+      return `<td class="input-cell"><input type="text" inputmode="numeric"
+        data-key="${escAttr(key)}" data-idx="${i}"
+        value="${v != null ? v.toLocaleString('ja-JP') : ''}"
+        data-filled="${v != null}"
+        onchange="onInput(this)" onfocus="this.select()"></td>`;
+    }).join('');
+    return `<tr class="${cls}">
+      <td>
+        <span class="item-num">${idx+1}</span>
+        <input class="name-input" type="text" value="${escAttr(key)}"
+          data-group="${group}" data-key="${escAttr(key)}"
+          onchange="onRenameItem(this)">
+      </td>
+      ${valCells}
+      <td class="op-cell">
+        <button class="op-btn" title="上へ" ${idx===0?'disabled':''} onclick="moveItem('${group}',${idx},-1)">↑</button>
+        <button class="op-btn" title="下へ" ${idx===count-1?'disabled':''} onclick="moveItem('${group}',${idx},1)">↓</button>
+        <button class="op-btn del" title="削除" onclick="deleteItem('${group}',${idx})">×</button>
+      </td>
+    </tr>`;
+  };
+
+  const addRow = (group) =>
+    `<tr class="add-row"><td colspan="${COLSPAN()}">
+      <button class="add-btn" onclick="addItem('${group}')">＋ 項目を追加</button>
+    </td></tr>`;
 
   let rows = '';
+  rows += `<tr class="section-header"><td colspan="${COLSPAN()}">■ 項目1：キャッシュ</td></tr>`;
+  CASH_ITEMS.forEach((k, i) => rows += itemRow(k, 'cash', i, CASH_ITEMS.length));
+  rows += addRow('cash');
+  rows += `<tr class="subtotal"><td>合計</td>` + PERIODS.map((_,i) => `<td>${fmt(cashTotal(i))}</td>`).join('') + '<td></td></tr>';
 
-  // Section: 現金・預金
-  rows += `<tr class="section-header"><td colspan="${14}">■ 現金・預金</td></tr>`;
-  for (const key of CASH_ITEMS) {
-    rows += `<tr><td>${key}</td>` + PERIODS.map((_, i) => {
-      const v = getVal(key, i);
-      const isPast = (i < 6);
-      if (isPast && v != null) {
-        return `<td>${fmt(v)}</td>`;
-      }
-      return `<td class="input-cell"><input type="text"
-        data-key="${key}" data-idx="${i}"
-        value="${v != null ? v.toLocaleString('ja-JP') : ''}"
-        data-filled="${v != null}"
-        onchange="onInput(this)" onfocus="this.select()"></td>`;
-    }).join('') + '</tr>';
-  }
-  // Cash totals
-  rows += `<tr class="subtotal"><td>合計</td>` + PERIODS.map((_,i) => {
-    const v = cashTotal(i);
-    return `<td>${v != null ? fmt(v) : ''}</td>`;
-  }).join('') + '</tr>';
-  rows += `<tr class="delta"><td>先月比</td>` + PERIODS.map((_,i) => {
-    if (i === 0) return `<td>-</td>`;
-    const v = delta(cashTotal, i, i-1);
-    return `<td class="${deltaClass(v)}">${fmtDelta(v)}</td>`;
-  }).join('') + '</tr>';
-  rows += `<tr class="delta"><td>初月比</td>` + PERIODS.map((_,i) => {
-    if (i === 0) return `<td>-</td>`;
-    const v = delta(cashTotal, i, 0);
-    return `<td class="${deltaClass(v)}">${fmtDelta(v)}</td>`;
-  }).join('') + '</tr>';
+  rows += `<tr class="spacer"><td colspan="${COLSPAN()}"></td></tr>`;
+  rows += `<tr class="section-header"><td colspan="${COLSPAN()}">■ 項目2：株式</td></tr>`;
+  STOCK_ITEMS.forEach((k, i) => rows += itemRow(k, 'stock', i, STOCK_ITEMS.length, 'stock'));
+  rows += addRow('stock');
+  rows += `<tr class="subtotal"><td>合計</td>` + PERIODS.map((_,i) => `<td>${fmt(stockTotal(i))}</td>`).join('') + '<td></td></tr>';
 
-  rows += `<tr><td colspan="14" style="height:8px;background:#f0f2f5;border:none;"></td></tr>`;
-
-  // Section: 投資
-  rows += `<tr class="section-header"><td colspan="${14}">■ 投資資産</td></tr>`;
-  for (const key of INV_ITEMS) {
-    rows += `<tr><td>${key}</td>` + PERIODS.map((_, i) => {
-      const v = getVal(key, i);
-      const isPast = (i < 6);
-      if (isPast && v != null) {
-        return `<td>${fmt(v)}</td>`;
-      }
-      return `<td class="input-cell"><input type="text"
-        data-key="${key}" data-idx="${i}"
-        value="${v != null ? v.toLocaleString('ja-JP') : ''}"
-        data-filled="${v != null}"
-        onchange="onInput(this)" onfocus="this.select()"></td>`;
-    }).join('') + '</tr>';
-  }
-  rows += `<tr class="subtotal"><td>合計</td>` + PERIODS.map((_,i) => {
-    const v = invTotal(i);
-    return `<td>${v != null ? fmt(v) : ''}</td>`;
-  }).join('') + '</tr>';
-  rows += `<tr class="delta"><td>先月比</td>` + PERIODS.map((_,i) => {
-    if (i === 0) return `<td>-</td>`;
-    const v = delta(invTotal, i, i-1);
-    return `<td class="${deltaClass(v)}">${fmtDelta(v)}</td>`;
-  }).join('') + '</tr>';
-  rows += `<tr class="delta"><td>初月比</td>` + PERIODS.map((_,i) => {
-    if (i === 0) return `<td>-</td>`;
-    const v = delta(invTotal, i, 0);
-    return `<td class="${deltaClass(v)}">${fmtDelta(v)}</td>`;
-  }).join('') + '</tr>';
-
-  rows += `<tr><td colspan="14" style="height:8px;background:#f0f2f5;border:none;"></td></tr>`;
-
-  // Grand Total
-  rows += `<tr class="grand-total"><td>総資産合計</td>` + PERIODS.map((_,i) => {
-    const v = grandTotal(i);
-    return `<td>${v != null ? fmt(v) : ''}</td>`;
-  }).join('') + '</tr>';
-  rows += `<tr class="grand-total delta"><td>先月比</td>` + PERIODS.map((_,i) => {
-    if (i === 0) return `<td>-</td>`;
-    const v = delta(grandTotal, i, i-1);
-    return `<td class="${deltaClass(v)}">${fmtDelta(v)}</td>`;
-  }).join('') + '</tr>';
-  rows += `<tr class="grand-total delta"><td>初月比</td>` + PERIODS.map((_,i) => {
-    if (i === 0) return `<td>-</td>`;
-    const v = delta(grandTotal, i, 0);
-    return `<td class="${deltaClass(v)}">${fmtDelta(v)}</td>`;
-  }).join('') + '</tr>';
-
-  rows += `<tr><td colspan="14" style="height:8px;background:#f0f2f5;border:none;"></td></tr>`;
-
-  // Ratios
-  rows += `<tr class="section-header"><td colspan="${14}">■ 資産割合</td></tr>`;
-  const ratioLabels = ['現金・預金','米国株式','長谷工持株','合計'];
-  for (const label of ratioLabels) {
-    rows += `<tr class="ratio"><td>${label}</td>` + PERIODS.map((_,i) => {
-      const gt = grandTotal(i);
-      if (gt == null || gt === 0) return `<td>-</td>`;
-      let v;
-      if (label === '現金・預金') v = cashTotal(i) / gt * 100;
-      else if (label === '合計') v = 100;
-      else {
-        const kmap = {'米国株式':'米国株式','長谷工持株':'長谷工持株'};
-        const raw = getVal(kmap[label], i);
-        v = raw != null ? raw / gt * 100 : null;
-      }
-      return `<td>${v != null ? v.toFixed(1)+'%' : '-'}</td>`;
-    }).join('') + '</tr>';
-  }
-
-  rows += `<tr><td colspan="14" style="height:8px;background:#f0f2f5;border:none;"></td></tr>`;
-
-  // 退職金
-  rows += `<tr class="retirement"><td>退職金見込</td>` + PERIODS.map((_,i) => {
+  rows += `<tr class="spacer"><td colspan="${COLSPAN()}"></td></tr>`;
+  rows += `<tr class="section-header"><td colspan="${COLSPAN()}">■ 参考</td></tr>`;
+  rows += `<tr class="retirement"><td>退職金見込</td>` + PERIODS.map((_, i) => {
     const v = getVal('退職金見込', i);
-    if (i >= 10) {
-      return `<td class="input-cell"><input type="text"
-        data-key="退職金見込" data-idx="${i}"
-        value="${v != null ? v.toLocaleString('ja-JP') : ''}"
-        data-filled="${v != null}"
-        onchange="onInput(this)" onfocus="this.select()"></td>`;
-    }
-    return `<td>${v != null ? fmt(v) : ''}</td>`;
-  }).join('') + '</tr>';
+    return `<td class="input-cell"><input type="text" inputmode="numeric"
+      data-key="退職金見込" data-idx="${i}"
+      value="${v != null ? v.toLocaleString('ja-JP') : ''}"
+      data-filled="${v != null}"
+      onchange="onInput(this)" onfocus="this.select()"></td>`;
+  }).join('') + '<td></td></tr>';
 
-  body.innerHTML = rows;
+  document.getElementById('input-body').innerHTML = rows;
 }
+
+function escAttr(s) { return String(s).replace(/"/g, '&quot;'); }
 
 function onInput(el) {
-  const key = el.dataset.key;
-  const idx = parseInt(el.dataset.idx);
+  const key = el.dataset.key, idx = parseInt(el.dataset.idx);
   const raw = el.value.replace(/,/g, '').trim();
   const num = raw === '' ? null : parseFloat(raw);
-  data[key][idx] = num;
-  el.dataset.filled = num != null;
-  if (num != null) el.value = num.toLocaleString('ja-JP');
-  renderTable();
-  updateCards();
-  updateCharts();
+  ensureRow(key);
+  data[key][idx] = (num != null && !isNaN(num)) ? num : null;
+  renderInput();
+  saveData();
 }
 
-// ========== SUMMARY CARDS ==========
-function updateCards() {
-  // Find latest month with data
-  let latestIdx = 0;
-  for (let i = 12; i >= 0; i--) {
-    if (grandTotal(i) != null) { latestIdx = i; break; }
-  }
-  const prevIdx = latestIdx > 0 ? latestIdx - 1 : null;
-  const gt = grandTotal(latestIdx);
-  const gtPrev = prevIdx != null ? grandTotal(prevIdx) : null;
-  const mom = gt != null && gtPrev != null ? gt - gtPrev : null;
-  const yoy = gt != null && grandTotal(0) != null ? gt - grandTotal(0) : null;
-  const retire = getVal('退職金見込', latestIdx);
+// ---- 項目の編集・追加・削除・並べ替え ----
+function groupArr(g) { return g === 'cash' ? CASH_ITEMS : STOCK_ITEMS; }
 
-  const cards = document.getElementById('summary-cards');
-  cards.innerHTML = `
+function onRenameItem(el) {
+  const group = el.dataset.group, oldKey = el.dataset.key;
+  let newKey = el.value.trim();
+  const arr = groupArr(group);
+  const pos = arr.indexOf(oldKey);
+  if (pos < 0) return;
+  if (newKey === '') { el.value = oldKey; return; }
+  if (newKey !== oldKey && allKeys().includes(newKey)) {
+    alert('同じ名前の項目が既に存在します。');
+    el.value = oldKey; return;
+  }
+  if (newKey === oldKey) return;
+  // データを引き継いでキー名を変更
+  arr[pos] = newKey;
+  data[newKey] = data[oldKey] || Array(13).fill(null);
+  delete data[oldKey];
+  saveItems(); saveData();
+  renderInput();
+}
+
+function addItem(group) {
+  const arr = groupArr(group);
+  let base = '新規項目', name = base, n = 1;
+  while (allKeys().includes(name)) { n++; name = base + n; }
+  arr.push(name);
+  data[name] = Array(13).fill(null);
+  saveItems(); saveData();
+  renderInput();
+}
+
+function deleteItem(group, idx) {
+  const arr = groupArr(group);
+  const key = arr[idx];
+  if (!confirm(`「${key}」を削除しますか？\n入力済みの金額データも削除されます。`)) return;
+  arr.splice(idx, 1);
+  delete data[key];
+  saveItems(); saveData();
+  renderInput();
+}
+
+function moveItem(group, idx, dir) {
+  const arr = groupArr(group);
+  const ni = idx + dir;
+  if (ni < 0 || ni >= arr.length) return;
+  [arr[idx], arr[ni]] = [arr[ni], arr[idx]];
+  saveItems();
+  renderInput();
+}
+
+// ========== SUMMARY SCREEN ==========
+function renderSummary() {
+  document.getElementById('summary-head').innerHTML =
+    `<tr><th>項目</th>${PERIODS.map(p => `<th>${p}</th>`).join('')}</tr>`;
+
+  const totalRow = (label, fn, cls='subtotal') =>
+    `<tr class="${cls}"><td>${label}</td>` + PERIODS.map((_,i) => `<td>${fmt(fn(i))}</td>`).join('') + '</tr>';
+  const deltaRow = (label, fn, baseFn, cls='delta') =>
+    `<tr class="${cls}"><td>${label}</td>` + PERIODS.map((_,i) => {
+      if (i === 0) return `<td>-</td>`;
+      const v = delta(fn, i, baseFn(i));
+      return `<td class="${deltaClass(v)}">${fmtDelta(v)}</td>`;
+    }).join('') + '</tr>';
+
+  const prev = i => i-1, first = () => 0;
+  let rows = '';
+
+  rows += `<tr class="section-header"><td colspan="14">■ 項目1：キャッシュ</td></tr>`;
+  rows += totalRow('合計', cashTotal);
+  rows += deltaRow('先月比', cashTotal, prev);
+  rows += deltaRow('初月比', cashTotal, first);
+
+  rows += `<tr class="spacer"><td colspan="14"></td></tr>`;
+  rows += `<tr class="section-header"><td colspan="14">■ 項目2：株式</td></tr>`;
+  rows += totalRow('合計', stockTotal);
+  rows += deltaRow('先月比', stockTotal, prev);
+  rows += deltaRow('初月比', stockTotal, first);
+
+  rows += `<tr class="spacer"><td colspan="14"></td></tr>`;
+  rows += totalRow('総資産合計', grandTotal, 'grand-total');
+  rows += deltaRow('先月比', grandTotal, prev, 'grand-total delta');
+  rows += deltaRow('初月比', grandTotal, first, 'grand-total delta');
+
+  rows += `<tr class="spacer"><td colspan="14"></td></tr>`;
+  rows += `<tr class="section-header"><td colspan="14">■ 資産割合</td></tr>`;
+  const ratio = (label, fn) => `<tr class="ratio"><td>${label}</td>` + PERIODS.map((_,i) => {
+    const gt = grandTotal(i); const part = fn(i);
+    if (gt == null || gt === 0 || part == null) return `<td>-</td>`;
+    return `<td>${(part/gt*100).toFixed(1)}%</td>`;
+  }).join('') + '</tr>';
+  rows += ratio('キャッシュ', cashTotal);
+  rows += ratio('株式', stockTotal);
+
+  document.getElementById('summary-body').innerHTML = rows;
+  renderCards();
+}
+
+function renderCards() {
+  let li = 0;
+  for (let i = 12; i >= 0; i--) { if (grandTotal(i) != null) { li = i; break; } }
+  const pi = li > 0 ? li - 1 : null;
+  const gt = grandTotal(li);
+  const mom = (gt != null && pi != null && grandTotal(pi) != null) ? gt - grandTotal(pi) : null;
+  const yoy = (gt != null && grandTotal(0) != null) ? gt - grandTotal(0) : null;
+  const retire = getVal('退職金見込', li);
+
+  document.getElementById('summary-cards').innerHTML = `
     <div class="card">
-      <div class="card-label">総資産（${PERIODS[latestIdx]}）</div>
+      <div class="card-label">総資産合計（${PERIODS[li]}）</div>
       <div class="card-value">¥${gt != null ? gt.toLocaleString('ja-JP') : '-'}</div>
-      <div class="card-sub" style="color:#888">${retire != null ? '退職金含: ¥'+(gt+retire).toLocaleString('ja-JP') : ''}</div>
+      <div class="card-sub" style="color:#888">${retire != null ? '退職金含む: ¥'+(gt+retire).toLocaleString('ja-JP') : ''}</div>
     </div>
     <div class="card ${mom != null && mom >= 0 ? 'green' : 'red'}">
       <div class="card-label">先月比</div>
       <div class="card-value ${mom != null && mom >= 0 ? 'pos' : 'neg'}">${mom != null ? (mom>=0?'+':'')+mom.toLocaleString('ja-JP') : '-'}</div>
-      <div class="card-sub" style="color:#888">${prevIdx != null ? PERIODS[prevIdx]+'→'+PERIODS[latestIdx] : ''}</div>
+      <div class="card-sub" style="color:#888">${pi != null ? PERIODS[pi]+' → '+PERIODS[li] : ''}</div>
     </div>
     <div class="card ${yoy != null && yoy >= 0 ? 'green' : 'red'}">
       <div class="card-label">初月比（vs 1月1日）</div>
@@ -419,160 +586,274 @@ function updateCards() {
       <div class="card-sub" style="color:#888">1月1日 ¥${grandTotal(0) != null ? grandTotal(0).toLocaleString('ja-JP') : '-'}</div>
     </div>
     <div class="card orange">
-      <div class="card-label">現金・預金（${PERIODS[latestIdx]}）</div>
-      <div class="card-value">¥${cashTotal(latestIdx) != null ? cashTotal(latestIdx).toLocaleString('ja-JP') : '-'}</div>
-      <div class="card-sub" style="color:#888">${gt ? (cashTotal(latestIdx)/gt*100).toFixed(1)+'%' : ''}</div>
+      <div class="card-label">キャッシュ合計（${PERIODS[li]}）</div>
+      <div class="card-value">¥${cashTotal(li) != null ? cashTotal(li).toLocaleString('ja-JP') : '-'}</div>
+      <div class="card-sub" style="color:#888">${gt ? (cashTotal(li)/gt*100).toFixed(1)+'%' : ''}</div>
     </div>
+    <div class="card purple">
+      <div class="card-label">株式合計（${PERIODS[li]}）</div>
+      <div class="card-value">¥${stockTotal(li) != null ? stockTotal(li).toLocaleString('ja-JP') : '-'}</div>
+      <div class="card-sub" style="color:#888">${gt ? (stockTotal(li)/gt*100).toFixed(1)+'%' : ''}</div>
+    </div>`;
+}
+
+// ========== 年次：入力画面 ==========
+function renderYearInput() {
+  const body = document.getElementById('yinput-body');
+  let rows = '';
+  years.forEach((y, idx) => {
+    const yoy = idx > 0 ? y.total - years[idx-1].total : null;
+    rows += `<tr>
+      <td><input class="name-input" style="width:70px" type="number" value="${y.year}" onchange="onYearField(${idx},'year',this.value)"></td>
+      <td class="input-cell"><input type="number" style="min-width:55px" value="${y.age != null ? y.age : ''}" onchange="onYearField(${idx},'age',this.value)"></td>
+      <td class="input-cell"><input type="text" inputmode="numeric" value="${y.total != null ? y.total.toLocaleString('ja-JP') : ''}" data-filled="${y.total != null}" onfocus="this.select()" onchange="onYearTotal(${idx},this)"></td>
+      <td class="${deltaClass(yoy)}">${idx===0 ? '-' : fmtDelta(yoy)}</td>
+      <td class="op-cell"><button class="op-btn del" title="削除" onclick="deleteYear(${idx})">×</button></td>
+    </tr>`;
+  });
+  body.innerHTML = rows;
+}
+function onYearField(idx, field, val) {
+  const n = parseInt(String(val).replace(/,/g,''));
+  years[idx][field] = isNaN(n) ? null : n;
+  if (field === 'year') years.sort((a,b) => a.year - b.year);
+  saveYears(); renderYearInput();
+}
+function onYearTotal(idx, el) {
+  const raw = el.value.replace(/,/g,'').trim();
+  const n = raw === '' ? null : parseFloat(raw);
+  years[idx].total = (n != null && !isNaN(n)) ? n : null;
+  saveYears(); renderYearInput();
+}
+function addYear() {
+  const last = years[years.length-1];
+  const ny = last ? last.year + 1 : new Date().getFullYear();
+  const na = (last && last.age != null) ? last.age + 1 : null;
+  years.push({ year: ny, age: na, total: null });
+  years.sort((a,b) => a.year - b.year);
+  saveYears(); renderYearInput();
+}
+function deleteYear(idx) {
+  if (!confirm(`${years[idx].year}年の行を削除しますか？`)) return;
+  years.splice(idx, 1);
+  saveYears(); renderYearInput();
+}
+
+// ========== 年次：集計表 ==========
+function renderYearSummary() {
+  const body = document.getElementById('ysummary-body');
+  const first = years.find(y => y.total != null);
+  let rows = '';
+  years.forEach((y, idx) => {
+    const yoy = idx > 0 && y.total != null && years[idx-1].total != null ? y.total - years[idx-1].total : null;
+    const fromFirst = (first && y.total != null) ? y.total - first.total : null;
+    const rate = idx > 0 && y.total != null && years[idx-1].total ? (y.total - years[idx-1].total) / years[idx-1].total * 100 : null;
+    rows += `<tr>
+      <td>${y.year}年</td>
+      <td>${y.age != null ? y.age + '歳' : '-'}</td>
+      <td>¥${y.total != null ? y.total.toLocaleString('ja-JP') : '-'}</td>
+      <td class="${deltaClass(yoy)}">${idx===0 ? '-' : fmtDelta(yoy)}</td>
+      <td class="${deltaClass(fromFirst)}">${idx===0 ? '-' : fmtDelta(fromFirst)}</td>
+      <td class="${rate==null?'zero-val':(rate>=0?'pos-val':'neg-val')}">${rate!=null ? (rate>=0?'+':'')+rate.toFixed(1)+'%' : '-'}</td>
+    </tr>`;
+  });
+  body.innerHTML = rows;
+  renderYearCards();
+}
+function renderYearCards() {
+  const valid = years.filter(y => y.total != null);
+  if (!valid.length) { document.getElementById('ysummary-cards').innerHTML = ''; return; }
+  const latest = valid[valid.length-1], first = valid[0];
+  const prev = valid.length > 1 ? valid[valid.length-2] : null;
+  const yoy = prev ? latest.total - prev.total : null;
+  const totalGrowth = latest.total - first.total;
+  const yearsSpan = latest.year - first.year;
+  const cagr = (yearsSpan > 0 && first.total > 0) ? (Math.pow(latest.total/first.total, 1/yearsSpan) - 1) * 100 : null;
+  document.getElementById('ysummary-cards').innerHTML = `
     <div class="card">
-      <div class="card-label">投資資産（${PERIODS[latestIdx]}）</div>
-      <div class="card-value">¥${invTotal(latestIdx) != null ? invTotal(latestIdx).toLocaleString('ja-JP') : '-'}</div>
-      <div class="card-sub" style="color:#888">${gt ? (invTotal(latestIdx)/gt*100).toFixed(1)+'%' : ''}</div>
+      <div class="card-label">最新総資産（${latest.year}年 ${latest.age!=null?latest.age+'歳':''}）</div>
+      <div class="card-value">¥${latest.total.toLocaleString('ja-JP')}</div>
     </div>
-  `;
+    <div class="card ${yoy!=null && yoy>=0 ? 'green':'red'}">
+      <div class="card-label">前年比</div>
+      <div class="card-value ${yoy!=null && yoy>=0 ? 'pos':'neg'}">${yoy!=null ? (yoy>=0?'+':'')+yoy.toLocaleString('ja-JP') : '-'}</div>
+      <div class="card-sub" style="color:var(--muted)">${prev ? prev.year+'年 → '+latest.year+'年' : ''}</div>
+    </div>
+    <div class="card green">
+      <div class="card-label">累計増減（${first.year}年比）</div>
+      <div class="card-value ${totalGrowth>=0?'pos':'neg'}">${(totalGrowth>=0?'+':'')+totalGrowth.toLocaleString('ja-JP')}</div>
+      <div class="card-sub" style="color:var(--muted)">${first.year}年 ¥${first.total.toLocaleString('ja-JP')}</div>
+    </div>
+    <div class="card purple">
+      <div class="card-label">年平均成長率（CAGR）</div>
+      <div class="card-value">${cagr!=null ? (cagr>=0?'+':'')+cagr.toFixed(1)+'%' : '-'}</div>
+      <div class="card-sub" style="color:var(--muted)">${yearsSpan}年間</div>
+    </div>`;
 }
 
 // ========== CHARTS ==========
 let charts = {};
-
-function getLabels() {
-  return PERIODS.filter((_, i) => grandTotal(i) != null);
-}
-function getDataFor(fn) {
-  return PERIODS.map((_, i) => fn(i)).filter(v => v != null);
-}
-
-const COLORS = {
-  cash: '#2980b9', invest: '#8e44ad', total: '#0f3460',
-  smbc: '#e74c3c', risona: '#e67e22', genkin: '#f1c40f',
-  icoca: '#1abc9c', paypay: '#e84393', starbucks: '#27ae60', megu: '#9b59b6',
-  us: '#c0392b', sbi: '#2980b9', haseko: '#16a085',
-};
+const PALETTE = ['#e74c3c','#e67e22','#f1c40f','#16a085','#1abc9c','#e84393','#27ae60','#9b59b6','#3498db','#d35400','#2ecc71','#c0392b','#8e44ad','#f39c12'];
+const color = i => PALETTE[i % PALETTE.length];
 
 function initCharts() {
-  // Total
   charts.total = new Chart(document.getElementById('chart-total'), {
     type: 'line',
     data: { labels: [], datasets: [
-      { label: '総資産', data: [], borderColor: COLORS.total, backgroundColor: 'rgba(15,52,96,0.1)', fill: true, tension: 0.3, pointRadius: 5 },
-      { label: '現金・預金', data: [], borderColor: COLORS.cash, backgroundColor: 'transparent', tension: 0.3, borderDash: [5,3] },
-      { label: '投資資産', data: [], borderColor: '#8e44ad', backgroundColor: 'transparent', tension: 0.3, borderDash: [5,3] },
+      { label: '総資産', data: [], borderColor: '#0f3460', backgroundColor: 'rgba(15,52,96,0.1)', fill: true, tension: 0.3, pointRadius: 4 },
+      { label: 'キャッシュ', data: [], borderColor: '#e67e22', backgroundColor: 'transparent', tension: 0.3, borderDash: [5,3] },
+      { label: '株式', data: [], borderColor: '#8e44ad', backgroundColor: 'transparent', tension: 0.3, borderDash: [5,3] },
     ]},
-    options: { responsive: true, plugins: { legend: { position: 'top' } }, scales: {
-      y: { ticks: { callback: v => '¥'+v.toLocaleString('ja-JP') } }
-    }}
+    options: { responsive: true, plugins: { legend: { position: 'top' } },
+      scales: { y: { ticks: { callback: v => '¥'+v.toLocaleString('ja-JP') } } } }
   });
-
-  // Cash breakdown
   charts.cash = new Chart(document.getElementById('chart-cash'), {
-    type: 'bar',
-    data: { labels: [], datasets: CASH_ITEMS.map((k,i) => ({
-      label: k, data: [],
-      backgroundColor: Object.values(COLORS)[i],
-      stack: 'cash'
-    }))},
-    options: { responsive: true, plugins: { legend: { position: 'top' } }, scales: {
-      x: { stacked: true }, y: { stacked: true, ticks: { callback: v => '¥'+v.toLocaleString('ja-JP') } }
-    }}
+    type: 'bar', data: { labels: [], datasets: [] },
+    options: { responsive: true, plugins: { legend: { position: 'top', labels:{boxWidth:12,font:{size:10}} } },
+      scales: { x: { stacked: true }, y: { stacked: true, ticks: { callback: v => '¥'+v.toLocaleString('ja-JP') } } } }
   });
-
-  // Invest breakdown
-  charts.invest = new Chart(document.getElementById('chart-invest'), {
-    type: 'bar',
-    data: { labels: [], datasets: INV_ITEMS.map((k,i) => ({
-      label: k, data: [],
-      backgroundColor: [COLORS.us, COLORS.sbi, COLORS.haseko][i],
-      stack: 'inv'
-    }))},
-    options: { responsive: true, plugins: { legend: { position: 'top' } }, scales: {
-      x: { stacked: true }, y: { stacked: true, ticks: { callback: v => '¥'+v.toLocaleString('ja-JP') } }
-    }}
+  charts.stock = new Chart(document.getElementById('chart-stock'), {
+    type: 'bar', data: { labels: [], datasets: [] },
+    options: { responsive: true, plugins: { legend: { position: 'top', labels:{boxWidth:12,font:{size:10}} } },
+      scales: { x: { stacked: true }, y: { stacked: true, ticks: { callback: v => '¥'+v.toLocaleString('ja-JP') } } } }
   });
-
-  // Pie
   charts.pie = new Chart(document.getElementById('chart-pie'), {
     type: 'doughnut',
-    data: { labels: [], datasets: [{ data: [], backgroundColor: [COLORS.cash, COLORS.us, COLORS.haseko, '#27ae60'] }] },
+    data: { labels: [], datasets: [{ data: [], backgroundColor: [] }] },
     options: { responsive: true, plugins: { legend: { position: 'right' } } }
   });
-
-  // MoM
   charts.mom = new Chart(document.getElementById('chart-mom'), {
     type: 'bar',
     data: { labels: [], datasets: [{ label: '先月比', data: [], backgroundColor: [] }] },
-    options: { responsive: true, plugins: { legend: { display: false } }, scales: {
-      y: { ticks: { callback: v => (v>=0?'+':'')+v.toLocaleString('ja-JP') } }
-    }}
+    options: { responsive: true, plugins: { legend: { display: false } },
+      scales: { y: { ticks: { callback: v => (v>=0?'+':'')+v.toLocaleString('ja-JP') } } } }
+  });
+  charts.ytotal = new Chart(document.getElementById('ychart-total'), {
+    type: 'line',
+    data: { labels: [], datasets: [{ label: '総資産', data: [], borderColor: '#0f3460', backgroundColor: 'rgba(15,52,96,0.12)', fill: true, tension: 0.3, pointRadius: 4 }] },
+    options: { responsive: true, plugins: { legend: { position: 'top' } },
+      scales: { y: { ticks: { callback: v => '¥'+v.toLocaleString('ja-JP') } } } }
+  });
+  charts.yyoy = new Chart(document.getElementById('ychart-yoy'), {
+    type: 'bar',
+    data: { labels: [], datasets: [{ label: '前年比', data: [], backgroundColor: [] }] },
+    options: { responsive: true, plugins: { legend: { display: false } },
+      scales: { y: { ticks: { callback: v => (v>=0?'+':'')+v.toLocaleString('ja-JP') } } } }
   });
 }
 
-function updateCharts() {
-  const labels = PERIODS.filter((_, i) => grandTotal(i) != null);
-  const validIdx = PERIODS.map((_, i) => i).filter(i => grandTotal(i) != null);
+function updateYearCharts() {
+  const valid = years.filter(y => y.total != null);
+  charts.ytotal.data.labels = valid.map(y => y.year + '年');
+  charts.ytotal.data.datasets[0].data = valid.map(y => y.total);
+  charts.ytotal.update();
 
-  // Total chart
+  const yoyLabels = [], yoyData = [];
+  valid.forEach((y, i) => { if (i > 0) { yoyLabels.push(y.year + '年'); yoyData.push(y.total - valid[i-1].total); } });
+  charts.yyoy.data.labels = yoyLabels;
+  charts.yyoy.data.datasets[0].data = yoyData;
+  charts.yyoy.data.datasets[0].backgroundColor = yoyData.map(v => v >= 0 ? 'rgba(39,174,96,0.7)' : 'rgba(231,76,60,0.7)');
+  charts.yyoy.update();
+}
+
+function updateCharts() {
+  const idx = PERIODS.map((_, i) => i).filter(i => grandTotal(i) != null);
+  const labels = idx.map(i => PERIODS[i]);
+
   charts.total.data.labels = labels;
-  charts.total.data.datasets[0].data = validIdx.map(i => grandTotal(i));
-  charts.total.data.datasets[1].data = validIdx.map(i => cashTotal(i));
-  charts.total.data.datasets[2].data = validIdx.map(i => invTotal(i));
+  charts.total.data.datasets[0].data = idx.map(i => grandTotal(i));
+  charts.total.data.datasets[1].data = idx.map(i => cashTotal(i));
+  charts.total.data.datasets[2].data = idx.map(i => stockTotal(i));
   charts.total.update();
 
-  // Cash chart
+  // 項目が変わる可能性があるためデータセットを毎回再構築
   charts.cash.data.labels = labels;
-  CASH_ITEMS.forEach((k, di) => {
-    charts.cash.data.datasets[di].data = validIdx.map(i => getVal(k, i) || 0);
-  });
+  charts.cash.data.datasets = CASH_ITEMS.map((k, di) => ({
+    label: k, data: idx.map(i => getVal(k, i) || 0), backgroundColor: color(di), stack: 'c'
+  }));
   charts.cash.update();
 
-  // Invest chart
-  charts.invest.data.labels = labels;
-  INV_ITEMS.forEach((k, di) => {
-    charts.invest.data.datasets[di].data = validIdx.map(i => getVal(k, i) || 0);
-  });
-  charts.invest.update();
+  charts.stock.data.labels = labels;
+  charts.stock.data.datasets = STOCK_ITEMS.map((k, di) => ({
+    label: k, data: idx.map(i => getVal(k, i) || 0), backgroundColor: color(di + 8), stack: 's'
+  }));
+  charts.stock.update();
 
-  // Pie - use latest
-  const li = validIdx[validIdx.length - 1];
-  const gt = grandTotal(li);
-  if (gt) {
-    const ct = cashTotal(li) || 0;
-    const us = getVal('米国株式', li) || 0;
-    const hk = getVal('長谷工持株', li) || 0;
-    const other = gt - ct - us - hk;
-    charts.pie.data.labels = ['現金・預金', '米国株式', '長谷工持株', 'SBI残高'];
-    charts.pie.data.datasets[0].data = [ct, us, hk, getVal('SBI残高', li)||0];
+  if (idx.length) {
+    const li = idx[idx.length - 1];
+    charts.pie.data.labels = ['キャッシュ', ...STOCK_ITEMS];
+    charts.pie.data.datasets[0].data = [cashTotal(li) || 0, ...STOCK_ITEMS.map(k => getVal(k, li) || 0)];
+    charts.pie.data.datasets[0].backgroundColor = ['#e67e22', ...STOCK_ITEMS.map((_, di) => color(di + 8))];
     charts.pie.update();
   }
 
-  // MoM
-  const momLabels = labels.slice(1);
-  const momData = validIdx.slice(1).map(i => {
-    const v = delta(grandTotal, i, i-1);
-    return v;
-  });
-  charts.mom.data.labels = momLabels;
+  const momIdx = idx.slice(1);
+  const momData = momIdx.map(i => delta(grandTotal, i, i-1));
+  charts.mom.data.labels = momIdx.map(i => PERIODS[i]);
   charts.mom.data.datasets[0].data = momData;
-  charts.mom.data.datasets[0].backgroundColor = momData.map(v => v >= 0 ? 'rgba(39,174,96,0.7)' : 'rgba(231,76,60,0.7)');
+  charts.mom.data.datasets[0].backgroundColor = momData.map(v => v != null && v >= 0 ? 'rgba(39,174,96,0.7)' : 'rgba(231,76,60,0.7)');
   charts.mom.update();
 }
 
 // ========== TABS ==========
 function showTab(name) {
-  document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', ['input','charts'][i] === name));
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.getElementById('section-' + name).classList.add('active');
+  if (name === 'summary') renderSummary();
   if (name === 'charts') updateCharts();
+  if (name === 'yinput') renderYearInput();
+  if (name === 'ysummary') renderYearSummary();
+  if (name === 'ycharts') updateYearCharts();
+}
+
+// ========== DARK MODE ==========
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  const btn = document.getElementById('theme-btn');
+  if (btn) btn.textContent = theme === 'dark' ? '☀️ ライト' : '🌙 ダーク';
+  // チャートの軸・凡例の色を更新
+  if (charts.total) refreshChartTheme(theme);
+}
+function toggleTheme() {
+  const cur = document.documentElement.getAttribute('data-theme') || 'light';
+  const next = cur === 'dark' ? 'light' : 'dark';
+  localStorage.setItem('assetTheme', next);
+  applyTheme(next);
+}
+function refreshChartTheme(theme) {
+  const tick = theme === 'dark' ? '#c9d1e0' : '#666';
+  const grid = theme === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
+  Chart.defaults.color = tick;
+  Chart.defaults.borderColor = grid;
+  Object.values(charts).forEach(c => {
+    if (c.options.scales) for (const ax in c.options.scales) {
+      c.options.scales[ax].ticks = c.options.scales[ax].ticks || {};
+      c.options.scales[ax].ticks.color = tick;
+      c.options.scales[ax].grid = { color: grid };
+    }
+    if (c.options.plugins && c.options.plugins.legend) {
+      c.options.plugins.legend.labels = c.options.plugins.legend.labels || {};
+      c.options.plugins.legend.labels.color = tick;
+    }
+    c.update();
+  });
 }
 
 // ========== INIT ==========
+loadItems();
 loadData();
-renderTable();
-updateCards();
+loadYears();
+renderInput();
+renderSummary();
+renderYearInput();
+renderYearSummary();
 initCharts();
 updateCharts();
-
-// Update today's date
-const today = new Date();
-document.getElementById('today-label').textContent = `集計日: ${today.getFullYear()}/${today.getMonth()+1}/${today.getDate()}`;
+updateYearCharts();
+applyTheme(localStorage.getItem('assetTheme') || 'light');
+const t = new Date();
+document.getElementById('today-label').textContent = `集計日: ${t.getFullYear()}/${t.getMonth()+1}/${t.getDate()}`;
 </script>
 </body>
 </html>
